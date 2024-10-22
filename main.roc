@@ -25,9 +25,10 @@ handleGuess = \number, game ->
 handleInput = \game, text -> 
     parsedText = Str.toU8 text
     when parsedText is 
-        Ok num -> handleGuess num game
+        Ok seedNum -> handleGuess seedNum game
         Err _ -> 
-            Stdout.line! "Alas, that's not a number!"
+            Stdout.line! "Alas, that's not a valid number!"
+            Stdout.line! "Numbers should be betwewen 0 and 255"
             Task.ok (Step game)
 
 runPrompt = \game -> 
@@ -39,9 +40,9 @@ runPrompt = \game ->
                 Stdout.line! "Woe! Something's gone wrong."
                 Task.ok (Done {}) 
 
-generateDefaultNumber : {} -> U8
-generateDefaultNumber = \_ -> 
-    initialSeed = Random.seed 3
+generateDefaultNumber : U32 -> U8
+generateDefaultNumber = \num -> 
+    initialSeed = Random.seed num
     generator =  Random.u8 
     random = generator initialSeed
     random.value
@@ -56,9 +57,20 @@ generateNumber = \defaultNumber ->
         |> Result.withDefault defaultNumber
         |> Task.ok
 
+generateSeedNum : {} -> Task U32 _
+generateSeedNum = \_ ->
+    (Utc.now {})!
+    |> Utc.toMillisSinceEpoch 
+    |> Num.toU32
+    |> Task.ok
+
+    
 
 main =
-    defaultNumber = generateDefaultNumber {}
+    seedNum = (generateSeedNum {})!
+    Stdout.line! (Num.toStr seedNum)
+
+    defaultNumber = generateDefaultNumber seedNum
     number = generateNumber! defaultNumber
 
     game : Game
